@@ -1,5 +1,5 @@
-# Decentralized-Lottery-Application
-<h2>✨Hey There this is the Decentralized Lottery Application which is very Simple Smart contracts that have been made by Akshay Gajjar.</h2>
+# Decentralized-Anonymous-E-Voting-System.
+<h2>✨Hey There this is the Decentralized Anonymous E-Voting System which is very Simple Smart contracts that have been made by Loop Breakers.</h2>
 <h1>Tools Used</h1>
 <h2>Remix-IDE</h2>
 
