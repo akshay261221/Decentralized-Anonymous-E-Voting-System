@@ -1,35 +1,115 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >= 0.7.0 <0.9.0;
 
-pragma solidity >=0.5.0<0.9.0;
+contract Ballot {
+    // VARIBLES
+    struct vote {
+        address voterAddresss;
+        bool choice;
+    }
+    struct voter {
+        string voterName;
+        bool voted;
+    }
+    uint private countResult = 0;
+    uint public finalResult = 0;
+    uint public totalVoter = 0;
+    uint public totalVote = 0;
 
-contract Lottery{
-    address public manager;
-    address payable[] public participants;
+    address public ballotOfficialAddress;
+    string public ballotOfficalName;
+    string public proposal;
 
-    constructor()
+    mapping(uint => vote) private votes;
+    mapping(address => voter) public voterRegister;
+
+    enum State { Created, Voting, Ended }
+    State public state;
+
+
+    // MODIFIER
+    modifier condition(bool _condition) {
+        require(_condition);
+        _;
+    }
+
+    modifier onlyOfficial() {
+        require(msg.sender == ballotOfficialAddress);
+        _;
+    }
+
+    modifier inState(State _state) {
+        require(state == _state);
+        _;
+    }
+
+
+    // FUNCTION
+    constructor(
+        string memory _ballotofficalName,
+        string memory _proposal
+    )  {
+        ballotOfficialAddress = msg.sender;
+        ballotOfficalName = _ballotofficalName;
+        proposal = _proposal;
+        state = State.Created;
+    }
+
+    
+    function addVoter(
+        address _voterAdress,
+        string memory _voterName
+    ) public
+        inState(State.Created)
+        onlyOfficial    
     {
-        manager=msg.sender; //global variable
+        voter memory v;
+        v.voterName = _voterName;
+        v.voted = false;
+        voterRegister[_voterAdress] = v;
+        totalVoter++;
     }
-    receive() external payable
+
+
+    function startVote() 
+        public 
+        inState(State.Created) 
+        onlyOfficial 
     {
-        require(msg.value  == 1 ether);
-        participants.push(payable(msg.sender));
+        state = State.Voting;
     }
-    function getBalance()public view returns(uint){
-        require(msg.sender==manager);
-        return address(this).balance;
-    }
-    function random() public view returns(uint)
+
+
+
+    function doVote(bool _choice)
+        public
+        inState(State.Voting)
+        returns (bool voted) 
     {
-        return uint(keccak256(abi.encodePacked(block.difficulty,block.timestamp,participants.length)));
+        bool isFound = false;
+        if(bytes(voterRegister[msg.sender].voterName).length != 0 
+            && voterRegister[msg.sender].voted == false ) 
+        {
+            voterRegister[msg.sender].voted = true;
+            vote memory v;
+            v.voterAddresss = msg.sender;
+            v.choice = _choice;
+            if(_choice) {
+                countResult++;
+            }
+            votes[totalVote] = v;
+            totalVote++;
+            isFound = true;
+        }
+        return isFound;
     }
-    function selectWinner()public {
-        require(msg.sender==manager);
-        require(participants.length>=3);
-        uint r=random();
-        address payable winner;
-        uint index= r % participants.length;
-        winner=participants[index];
-        winner.transfer(getBalance());
-        participants=new address payable[](0);
+    function endVote() 
+        public
+        inState(State.Voting)
+        onlyOfficial
+    {
+        state = State.Ended;
+        finalResult = countResult;
     }
+
 }
